@@ -28,7 +28,7 @@ let amqp = null;
     amqp = await createChannel(RABBITMQ_URL, EXCHANGE);
     console.log('[orders] AMQP connected');
 
-    // Bind de fila para consumir eventos user.created
+    // Bind de fila para consumir eventos user.create
     await amqp.ch.assertQueue(QUEUE, { durable: true });
     await amqp.ch.bindQueue(QUEUE, EXCHANGE, ROUTING_KEY_USER_CREATED);
 
