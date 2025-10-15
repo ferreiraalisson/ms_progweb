@@ -10,6 +10,9 @@ const PORT = process.env.PORT || 3000;
 const USERS_URL = process.env.USERS_URL || 'http://localhost:3001';
 const ORDERS_URL = process.env.ORDERS_URL || 'http://localhost:3002';
 
+// Health
+app.get('/health', (req, res) => res.json({ ok: true, service: 'gateway' }));
+
 // Roteamento de APIs
 app.use('/users', createProxyMiddleware({
   target: USERS_URL,
@@ -24,9 +27,6 @@ app.use('/orders', createProxyMiddleware({
 }));
 
 app.use(express.json());
-
-// Health
-app.get('/health', (req, res) => res.json({ ok: true, service: 'gateway' }));
 
 app.listen(PORT, () => {
   console.log(`[gateway] listening on http://localhost:${PORT}`);

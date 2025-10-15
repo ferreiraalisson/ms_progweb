@@ -59,6 +59,23 @@ app.get('/:id', (req, res) => {
   res.json(user);
 });
 
+// IMPLEMENTAR O ATUALIZAR - PUT
+app.put('/:id', (req, res) => {
+
+  const verify = users.get(req.params.id);
+  if (!verify) return res.status(404).json({ error: 'not found' });
+  res.json(verify);
+
+  const { name, email } = req.body || {};
+  if (!name || !email) return res.status(400).json({ error: 'name and email are required' });
+
+  const user = { id, name, email, uptatedAt: new Date().toISOString() };
+  users.set(user);
+
+  //Implementar o publish event
+
+});
+
 app.listen(PORT, () => {
   console.log(`[users] listening on http://localhost:${PORT}`);
 });
