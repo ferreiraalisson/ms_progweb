@@ -62,18 +62,30 @@ app.get('/:id', (req, res) => {
 // IMPLEMENTAR O ATUALIZAR - PUT
 app.put('/:id', (req, res) => {
 
-  const verify = users.get(req.params.id);
-  if (!verify) return res.status(404).json({ error: 'not found' });
-  res.json(verify);
+  const id = req.params.id;
 
+  const verify = users.get(id);
+  if (!verify) return res.status(404).json({ error: 'not found' });
+  
   const { name, email } = req.body || {};
   if (!name || !email) return res.status(400).json({ error: 'name and email are required' });
 
-  const user = { id, name, email, uptatedAt: new Date().toISOString() };
-  users.set(user);
+  const user = { id, name, email, updatedAt: new Date().toISOString() };
+  users.set(id, user);
 
   //Implementar o publish event
+  try {
+    if (amqp?.ch){
+        const newload = Buffer.from(JSON.stringify(user));
+        amqp.ch.publish(EXCHANGE, ROUTING_KEYS.USER_UPDATED, newload, { persistent: true});
+        console.log('[users] published event:', ROUTING_KEYS.USER_UPDATED, user);
+    }
+    
+  } catch (error) {
+    console.error('[users] publish error:', error.message);
+  }
 
+  res.status(200).json(user);
 });
 
 app.listen(PORT, () => {

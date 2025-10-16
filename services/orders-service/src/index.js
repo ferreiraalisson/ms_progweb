@@ -102,6 +102,29 @@ app.post('/', async (req, res) => {
   res.status(201).json(order);
 });
 
+app.delete('/:id', (req, res) => {
+  const id = req.params.id;
+
+  const order = orders.get(id);
+  if (!order) {
+    return res.status(404).json({ error: 'not found' });
+  }
+
+  orders.delete(id);
+
+  try {
+    if (amqp?.ch) {
+      amqp.ch.publish(EXCHANGE, ROUTING_KEYS.ORDER_CANCELLED, Buffer.from(JSON.stringify(order)), { persistent: true });
+      console.log('[orders] published event:', ROUTING_KEYS.ORDER_CANCELLED, order.id);
+    }
+  } catch (err) {
+    console.error('[orders] publish error:', err.message);
+  }
+
+  res.status(200).json({ message: 'order cancelled', id });
+});
+
+
 app.listen(PORT, () => {
   console.log(`[orders] listening on http://localhost:${PORT}`);
   console.log(`[orders] users base url: ${USERS_BASE_URL}`);
