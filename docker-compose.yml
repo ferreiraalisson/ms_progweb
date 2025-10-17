@@ -9,6 +9,18 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
 
+  users-db:
+    image: postgres:16
+    container_name: ms_users_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postegres
+      POSTGRES_DB: users_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_data:/var/lib/postgresql/data
+
   users:
     build:
       context: .                     # << agora é a raiz do projeto
@@ -18,8 +30,10 @@ services:
       PORT: 3001
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
       EXCHANGE: app.topic
+      DATABASE_URL: postgresql://postgres:postgres@users-db:5432/users_db
     depends_on:
       - rabbitmq
+      - users-db
     ports:
       - "3001:3001"
 
@@ -56,3 +70,6 @@ services:
       - orders
     ports:
       - "3000:3000"
+
+volumes:
+  pgdata_data:
