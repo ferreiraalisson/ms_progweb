@@ -6,19 +6,19 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
 }
 
 model Order {
-  id        String   @id 
+  id        String   @id @default(uuid())
   userId    String
   items     String   // ou Json, dependendo do uso
   total     Float
-  status    String
+  status    String   @default("created")
   createdAt DateTime @default(now())
 }

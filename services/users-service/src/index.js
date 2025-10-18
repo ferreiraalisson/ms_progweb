@@ -3,6 +3,7 @@ import morgan from 'morgan';
 import { nanoid } from 'nanoid';
 import { createChannel } from './amqp.js';
 import { ROUTING_KEYS } from '../common/events.js';
+import { prisma } from './prisma.js';
 
 const app = express();
 app.use(express.json());
@@ -12,8 +13,8 @@ const PORT = process.env.PORT || 3001;
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
 const EXCHANGE = process.env.EXCHANGE || 'app.topic';
 
-// In-memory "DB"
-const users = new Map();
+// // In-memory "DB"
+// const users = new Map();
 
 let amqp = null;
 (async () => {
@@ -27,17 +28,20 @@ let amqp = null;
 
 app.get('/health', (req, res) => res.json({ ok: true, service: 'users' }));
 
-app.get('/', (req, res) => {
-  res.json(Array.from(users.values()));
+app.get('/', async (req, res) => {
+  const users = await prisma.user.findMany();
+  res.json(users);
+  // res.json(Array.from(users.values()));
 });
 
 app.post('/', async (req, res) => {
   const { name, email } = req.body || {};
   if (!name || !email) return res.status(400).json({ error: 'name and email are required' });
 
-  const id = `u_${nanoid(6)}`;
-  const user = { id, name, email, createdAt: new Date().toISOString() };
-  users.set(id, user);
+  const user = await prisma.user.create({ data: { name, email} });
+  // const id = `u_${nanoid(6)}`;
+  // const user = { id, name, email, createdAt: new Date().toISOString() };
+  // users.set(id, user);
 
   // Publish event
   try {
@@ -53,25 +57,31 @@ app.post('/', async (req, res) => {
   res.status(201).json(user);
 });
 
-app.get('/:id', (req, res) => {
-  const user = users.get(req.params.id);
+app.get('/:id', async (req, res) => {
+  const user = await prisma.user.findUnique({where: { id: req.params.id} });
+  // const user = users.get(req.params.id);
   if (!user) return res.status(404).json({ error: 'not found' });
   res.json(user);
 });
 
 // IMPLEMENTAR O ATUALIZAR - PUT
-app.put('/:id', (req, res) => {
+app.put('/:id', async (req, res) => {
 
-  const id = req.params.id;
+  // const id = req.params.id;
 
-  const verify = users.get(id);
-  if (!verify) return res.status(404).json({ error: 'not found' });
+  // const verify = users.get(id);
+  // if (!verify) return res.status(404).json({ error: 'not found' });
   
   const { name, email } = req.body || {};
   if (!name || !email) return res.status(400).json({ error: 'name and email are required' });
 
-  const user = { id, name, email, updatedAt: new Date().toISOString() };
-  users.set(id, user);
+  // const user = { id, name, email, updatedAt: new Date().toISOString() };
+  // users.set(id, user);
+
+  const updated = await prisma.user.update({
+    where: { id: req.params.id },
+    data: { name, email, updatedAt: new Date() },
+  });
 
   //Implementar o publish event
   try {
@@ -85,7 +95,7 @@ app.put('/:id', (req, res) => {
     console.error('[users] publish error:', error.message);
   }
 
-  res.status(200).json(user);
+  res.status(200).json(updated);
 });
 
 app.listen(PORT, () => {

@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import { nanoid } from 'nanoid';
 import { createChannel } from './amqp.js';
 import { ROUTING_KEYS } from '../common/events.js';
+import { prisma } from './prisma.js';
 
 const app = express();
 app.use(express.json());
@@ -17,9 +18,9 @@ const EXCHANGE = process.env.EXCHANGE || 'app.topic';
 const QUEUE = process.env.QUEUE || 'orders.q';
 const ROUTING_KEY_USER_CREATED = process.env.ROUTING_KEY_USER_CREATED || ROUTING_KEYS.USER_CREATED;
 
-// In-memory "DB"
-const orders = new Map();
-// In-memory cache de usuários (preenchido por eventos)
+// // In-memory "DB"
+// const orders = new Map();
+// // In-memory cache de usuários (preenchido por eventos)
 const userCache = new Map();
 
 let amqp = null;
@@ -52,8 +53,10 @@ let amqp = null;
 
 app.get('/health', (req, res) => res.json({ ok: true, service: 'orders' }));
 
-app.get('/', (req, res) => {
-  res.json(Array.from(orders.values()));
+app.get('/', async (req, res) => {
+  // res.json(Array.from(orders.values()));
+  const orders = await prisma.order.findMany();
+  res.json(orders);
 });
 
 async function fetchWithTimeout(url, ms) {
@@ -85,9 +88,18 @@ app.post('/', async (req, res) => {
     }
   }
 
-  const id = `o_${nanoid(6)}`;
-  const order = { id, userId, items, total, status: 'created', createdAt: new Date().toISOString() };
-  orders.set(id, order);
+  // const id = `o_${nanoid(6)}`;
+  // const order = { id, userId, items, total, status: 'created', createdAt: new Date().toISOString() };
+  // orders.set(id, order);
+
+  const order = await prisma.order.create({
+    data: {
+      userId,
+      items: JSON.stringify(items),
+      total,
+      status: 'created',
+    },
+  });
 
   // (Opcional) publicar evento order.created
   try {
@@ -102,15 +114,16 @@ app.post('/', async (req, res) => {
   res.status(201).json(order);
 });
 
-app.delete('/:id', (req, res) => {
-  const id = req.params.id;
-
-  const order = orders.get(id);
+app.delete('/:id', async (req, res) => {
+  // const id = req.params.id;
+  // const order = orders.get(id);
+  const order = await prisma.order.findUnique({ where: { id: req.params.id } });
   if (!order) {
     return res.status(404).json({ error: 'not found' });
   }
 
-  orders.delete(id);
+  // orders.delete(id);
+  await prisma.order.delete({ where: { id: req.params.id } });
 
   try {
     if (amqp?.ch) {

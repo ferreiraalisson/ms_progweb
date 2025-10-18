@@ -13,8 +13,8 @@ services:
     image: postgres:16
     container_name: ms_users_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postegres
+      POSTGRES_USER: userPost
+      POSTGRES_PASSWORD: user123
       POSTGRES_DB: users_db
     ports:
       - "5432:5432"
@@ -30,10 +30,12 @@ services:
       PORT: 3001
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
       EXCHANGE: app.topic
-      DATABASE_URL: postgresql://postgres:postgres@users-db:5432/users_db
+      DATABASE_URL: postgresql://userPost:user123@users-db:5432/users_db
     depends_on:
       - rabbitmq
       - users-db
+    env_file:
+      - ./services/users-service/.env
     ports:
       - "3001:3001"
 
@@ -53,8 +55,13 @@ services:
     depends_on:
       - rabbitmq
       - users
+    env_file:
+    - ./services/orders-service/.env
     ports:
       - "3002:3002"
+    volumes:
+      - ./services/orders-service/prisma:/app/prisma
+
 
   gateway:
     build:
