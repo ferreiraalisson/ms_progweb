@@ -78,17 +78,34 @@ microservices-node-lesson/
 │     └─ index.js
 ├─ services/
 │  ├─ users-service/
+|  |  ├─ node_modules
 │  │  ├─ Dockerfile
+|  |  ├─ .env
+|  |  ├─ .gitignore
 │  │  ├─ package.json
+|  |  ├─ package-lock.json
+|  |  ├─ prisma/
+|  |  |  ├─ migrations
+|  |  |  |  ├─ 2025101920951_init
+|  |  |  |  |  └─ migration.sql
+|  |  |  |  └─ migration_lock.toml
+|  |  |  ├─ dev.db
+|  |  |  └─ schema.prisma
 │  │  └─ src/
 │  │     ├─ index.js
 │  │     └─ amqp.js
 │  └─ orders-service/
+|     ├─ node_modules
+|     ├─ .env
+|     ├─ .gitignore
 │     ├─ Dockerfile
 │     ├─ package.json
-│     └─ src/
-│        ├─ index.js
-│        └─ amqp.js
+|     ├─ package-lock.json
+│     ├─ src/
+│     |   ├─ index.js
+│     |   └─ amqp.js
+|     └─ prisma/
+|         └─ schema.prisma
 └─ common/
    └─ events.js
 ```
